@@ -1,3 +1,4 @@
-import Cat from './cat.js';
-import Dog from './dog.js';
-export { Dog, Cat };
+import * as receiverFns from "./receiver";
+export { attachToGun } from "./gun";
+
+export const receiver = receiverFns;
