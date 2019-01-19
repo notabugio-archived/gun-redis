@@ -1,7 +1,7 @@
 import { path, prop } from "ramda";
 import { createClient } from "./client";
 
-export const respondToGets = Gun => db => {
+export const respondToGets = (Gun, { skipValidation = true } = {}) => db => {
   const redis = createClient(Gun);
 
   db.onIn(msg => {
@@ -18,7 +18,11 @@ export const respondToGets = Gun => db => {
           put: { [soul]: result || undefined }
         };
 
-        from.send({ json, ignoreLeeching: true, skipValidation: !result });
+        from.send({
+          json,
+          ignoreLeeching: true,
+          skipValidation: !result || skipValidation
+        });
       })
       .catch(err => {
         const json = {
@@ -27,7 +31,7 @@ export const respondToGets = Gun => db => {
           err: `${err}`
         };
 
-        from.send({ json, ignoreLeeching: true, skipValidation: true });
+        from.send({ json, ignoreLeeching: true, skipValidation });
       })
       .then(() => msg);
   });
