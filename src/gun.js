@@ -31,14 +31,14 @@ export const attachToGun = Gun => Gun.on("create", function(db) {
     redis.write(request.put)
       .then(() =>
         db.on("in", {
-          "#": dedupId,
+          "@": dedupId,
           ok: true,
           err: null
         })
       )
       .catch(err =>
         db.on("in", {
-          "#": dedupId,
+          "@": dedupId,
           ok: false,
           err: err
         })
