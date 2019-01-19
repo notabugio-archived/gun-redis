@@ -111,7 +111,7 @@ export const createClient = (Gun, ...config) => {
             const writeNextBatch = () => {
               const batch = nodeKeys.splice(0, PUT_BATCH_SIZE);
 
-              if (!batch.length) return;
+              if (!batch.length) return resolve();
               const updates = toRedis({
                 _: {
                   "#": soul,
@@ -120,7 +120,7 @@ export const createClient = (Gun, ...config) => {
                 ...pick(batch, node)
               });
 
-              redis.hmset(soul, toRedis(updates), err =>
+              return redis.hmset(soul, toRedis(updates), err =>
                 err ? reject(err) : writeNextBatch()
               );
             };
