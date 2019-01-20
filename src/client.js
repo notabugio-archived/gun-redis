@@ -1,4 +1,4 @@
-import { keys, path, pick } from "ramda";
+import { without, keys, path, pick } from "ramda";
 import { createClient as createRedisClient } from "redis";
 import { toRedis, fromRedis } from "./serialize";
 
@@ -30,7 +30,7 @@ export const createClient = (Gun, ...config) => {
       const data = rawData ? { ...rawData } : rawData;
 
       if (!Gun.SEA || soul.indexOf("~") === -1) return rawData;
-      keys(data).forEach(key => {
+      without(["_"], keys(data)).forEach(key => {
         Gun.SEA.verify(
           Gun.SEA.opt.pack(rawData[key], key, rawData, soul),
           false,
