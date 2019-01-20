@@ -15,7 +15,7 @@ export const respondToGets = (Gun, { skipValidation = true } = {}) => db => {
         const json = {
           "#": from.msgId(),
           "@": dedupId,
-          put: { [soul]: result || undefined }
+          put: { [soul]: result || null }
         };
 
         from.send({
