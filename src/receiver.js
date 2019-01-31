@@ -5,11 +5,11 @@ export const respondToGets = (Gun, { skipValidation = true } = {}) => db => {
   const redis = createClient(Gun);
 
   db.onIn(msg => {
-    const { from, json } = msg;
+    const { from, json, fromCluster } = msg;
     const soul = path(["get", "#"], json);
     const dedupId = prop("#", json);
 
-    if (!soul) return msg;
+    if (!soul || fromCluster) return msg;
     return redis
       .batchedGet(soul, result => {
         const json = {
