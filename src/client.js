@@ -1,4 +1,4 @@
-import { without, keys, path, pick } from "ramda";
+import * as R from "ramda";
 import { createClient as createRedisClient } from "redis";
 import { toRedis, fromRedis } from "./serialize";
 
@@ -9,7 +9,13 @@ const metaRe = /^_\..*/;
 const edgeRe = /(\.#$)/;
 
 export const createClient = (Gun, ...config) => {
+  let changeSubscribers = [];
   const redis = createRedisClient(...config);
+  const notifyChangeSubscribers = (soul, key) =>
+    changeSubscribers.map(fn => fn(soul, key));
+  const onChange = fn => changeSubscribers.push(fn);
+  const offChange = fn =>
+    (changeSubscribers = R.without([fn], changeSubscribers));
 
   const get = soul =>
     new Promise((resolve, reject) => {
@@ -30,7 +36,7 @@ export const createClient = (Gun, ...config) => {
       const data = rawData ? { ...rawData } : rawData;
 
       if (!Gun.SEA || soul.indexOf("~") === -1) return rawData;
-      without(["_"], keys(data)).forEach(key => {
+      R.without(["_"], R.keys(data)).forEach(key => {
         Gun.SEA.verify(
           Gun.SEA.opt.pack(rawData[key], key, rawData, soul),
           false,
@@ -38,6 +44,29 @@ export const createClient = (Gun, ...config) => {
         );
       });
       return data;
+    });
+
+  const readKeyBatch = (soul, batch) =>
+    new Promise((ok, fail) => {
+      const batchMeta = batch.map(key => `_.>.${key}`.replace(edgeRe, ""));
+
+      return redis.hmget(soul, batchMeta, (err, meta) => {
+        if (err) {
+          return console.error("hmget err", err.stack || err) || fail(err);
+        }
+        const obj = {
+          "_.#": soul
+        };
+
+        meta.forEach((val, idx) => (obj[batchMeta[idx]] = val));
+        return redis.hmget(soul, batch, (err, res) => {
+          if (err) {
+            return console.error("hmget err", err.stack || err) || fail(err);
+          }
+          res.forEach((val, idx) => (obj[batch[idx]] = val));
+          return ok(fromRedis(obj));
+        });
+      });
     });
 
   const batchedGet = (soul, cb) =>
@@ -60,34 +89,11 @@ export const createClient = (Gun, ...config) => {
             const batch = attrKeys.splice(0, GET_BATCH_SIZE);
 
             if (!batch.length) return ok(true);
-            const batchMeta = batch.map(key =>
-              `_.>.${key}`.replace(edgeRe, "")
-            );
 
-            return redis.hmget(soul, batchMeta, (err, meta) => {
-              if (err) {
-                return (
-                  console.error("hmget err", err.stack || err) || fail(err)
-                );
-              }
-              const obj = {
-                "_.#": soul
-              };
-
-              meta.forEach((val, idx) => (obj[batchMeta[idx]] = val));
-              return redis.hmget(soul, batch, (err, res) => {
-                if (err) {
-                  return (
-                    console.error("hmget err", err.stack || err) || fail(err)
-                  );
-                }
-                res.forEach((val, idx) => (obj[batch[idx]] = val));
-                const result = fromRedis(obj);
-
-                cb(result);
-                return ok();
-              });
-            });
+            return readKeyBatch(soul, batch).then(result => {
+              cb(result);
+              return ok();
+            }, fail);
           });
         const readNextBatch = () =>
           readBatch().then(done => !done && readNextBatch);
@@ -102,27 +108,61 @@ export const createClient = (Gun, ...config) => {
 
   const write = put =>
     Promise.all(
-      keys(put).map(
+      R.keys(put).map(
         soul =>
           new Promise((resolve, reject) => {
+            let hasChanged = false;
             const node = put[soul];
-            const meta = path(["_", ">"], node) || {};
-            const nodeKeys = keys(meta);
+            const meta = R.path(["_", ">"], node) || {};
+            const nodeKeys = R.keys(meta);
             const writeNextBatch = () => {
               const batch = nodeKeys.splice(0, PUT_BATCH_SIZE);
 
-              if (!batch.length) return resolve();
-              const updates = toRedis({
+              if (!batch.length) {
+                if (hasChanged) notifyChangeSubscribers(soul, hasChanged);
+                return resolve();
+              }
+              const updated = {
                 _: {
                   "#": soul,
-                  ">": pick(batch, meta)
+                  ">": R.pick(batch, meta)
                 },
-                ...pick(batch, node)
-              });
+                ...R.pick(batch, node)
+              };
+              const updates = toRedis(updated);
 
-              return redis.hmset(soul, toRedis(updates), err =>
-                err ? reject(err) : writeNextBatch()
-              );
+              // return readKeyBatch(soul, batch).then(existing => {
+              return get(soul).then(existing => {
+                const modifiedKey = batch.find(key => {
+                  const updatedVal = R.prop(key, updated);
+                  const existingVal = R.prop(key, existing);
+
+                  if (updatedVal === existingVal) return false;
+                  const updatedSoul = R.path([key, "#"], updated);
+                  const existingSoul = R.path([key, "#"], existing);
+
+                  if (
+                    (updatedSoul || existingSoul) &&
+                    updatedSoul === existingSoul
+                  ) {
+                    return false;
+                  }
+                  if (
+                    typeof updatedVal === "number" &&
+                    parseFloat(existingVal) === updatedVal
+                  ) {
+                    return false;
+                  }
+                  return true;
+                });
+
+                if (!modifiedKey) return writeNextBatch();
+
+                return redis.hmset(soul, toRedis(updates), err => {
+                  hasChanged = modifiedKey;
+                  err ? reject(err) : writeNextBatch();
+                });
+              });
             };
 
             return writeNextBatch();
@@ -130,5 +170,7 @@ export const createClient = (Gun, ...config) => {
       )
     );
 
-  return { get, read, batchedGet, write };
+  onChange((soul, key) => console.log("modify", soul, key));
+
+  return { get, read, batchedGet, write, onChange, offChange };
 };

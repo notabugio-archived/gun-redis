@@ -31,7 +31,7 @@ function postUnflatten(obj) {
     if (key[0] === ".") delete [key];
   });
   return obj;
-};
+}
 
 export function fromRedis(obj) {
   if (!obj) return obj;
@@ -72,7 +72,7 @@ export function toRedis(obj) {
     if (obj[key] === null) {
       obj[key] = "|NULL|";
     }
-    if (obj[key] === undefined) {
+    if (typeof obj[key] === undefined) {
       obj[key] = "|UNDEFINED|";
     }
     if (obj[key] && obj[key].length > FIELD_SIZE_LIMIT) {
