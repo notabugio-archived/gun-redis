@@ -153,6 +153,7 @@ export const createClient = (Gun, ...config) => {
                   ) {
                     return false;
                   }
+
                   return true;
                 });
 
