@@ -54,7 +54,7 @@ export const acceptWrites = Gun => db => {
           // return console.log("would write", diff) || msg;
           return redis
             .write(diff)
-            .then(() => console.log("wrote", diff) || msg);
+            .then(() => msg);
         })
         .catch(err =>
           console.error("error accepting writes", err.stack || err)
