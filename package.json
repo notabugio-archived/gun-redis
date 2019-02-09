@@ -1,6 +1,6 @@
 {
   "name": "gun-redis",
-  "version": "0.4.1",
+  "version": "0.4.2",
   "description": "Redis adapter for gun and gun-receiver",
   "main": "lib/gun-redis.js",
   "scripts": {

@@ -54,7 +54,30 @@ export const acceptWrites = Gun => db => {
           // return console.log("would write", diff) || msg;
           return redis
             .write(diff)
-            .then(() => msg);
+            .then(() => {
+              const json = { "@": msg.json["#"], ok: true, err: null };
+
+              msg.from &&
+                msg.from.send &&
+                msg.from.send({
+                  json,
+                  ignoreLeeching: true,
+                  skipValidation: true
+                });
+              return msg;
+            })
+            .catch(err => {
+              const json = { "@": msg.json["#"], ok: false, err: `${err}` };
+
+              msg.from &&
+                msg.from.send &&
+                msg.from.send({
+                  json,
+                  ignoreLeeching: true,
+                  skipValidation: true
+                });
+              return msg;
+            });
         })
         .catch(err =>
           console.error("error accepting writes", err.stack || err)
