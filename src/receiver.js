@@ -1,7 +1,10 @@
 import * as R from "ramda";
 import { createClient } from "./client";
 
-export const respondToGets = (Gun, { skipValidation = true } = {}) => db => {
+export const respondToGets = (
+  Gun,
+  { disableRelay = true, skipValidation = true } = {}
+) => db => {
   const redis = (Gun.redis = Gun.redis || createClient(Gun));
 
   db.onIn(msg => {
@@ -24,6 +27,7 @@ export const respondToGets = (Gun, { skipValidation = true } = {}) => db => {
           skipValidation: !result || skipValidation
         });
       })
+      .then(() => (disableRelay ? R.assoc("noRelay", true, msg) : msg))
       .catch(err => {
         const json = {
           "#": from.msgId(),
@@ -32,14 +36,14 @@ export const respondToGets = (Gun, { skipValidation = true } = {}) => db => {
         };
 
         from.send({ json, ignoreLeeching: true, skipValidation });
-      })
-      .then(() => msg);
+        return msg;
+      });
   });
 
   return db;
 };
 
-export const acceptWrites = Gun => db => {
+export const acceptWrites = (Gun, { disableRelay = false } = {}) => db => {
   const redis = (Gun.redis = Gun.redis || createClient(Gun)); // eslint-disable-line
 
   db.onIn(msg => {
@@ -64,7 +68,7 @@ export const acceptWrites = Gun => db => {
                   ignoreLeeching: true,
                   skipValidation: true
                 });
-              return msg;
+              return disableRelay ? R.assoc("noRelay", true, msg) : msg;
             })
             .catch(err => {
               const json = { "@": msg.json["#"], ok: false, err: `${err}` };
