@@ -111,17 +111,13 @@ export const createClient = (Gun, ...config) => {
       R.keys(put).map(
         soul =>
           new Promise((resolve, reject) => {
-            let hasChanged = false;
             const node = put[soul];
             const meta = R.path(["_", ">"], node) || {};
             const nodeKeys = R.keys(meta);
             const writeNextBatch = () => {
               const batch = nodeKeys.splice(0, PUT_BATCH_SIZE);
 
-              if (!batch.length) {
-                if (hasChanged) notifyChangeSubscribers(soul, hasChanged);
-                return resolve();
-              }
+              if (!batch.length) return resolve();
               const updated = {
                 _: {
                   "#": soul,
@@ -129,11 +125,10 @@ export const createClient = (Gun, ...config) => {
                 },
                 ...R.pick(batch, node)
               };
-              const updates = toRedis(updated);
 
               // return readKeyBatch(soul, batch).then(existing => {
               return get(soul).then(existing => {
-                const modifiedKey = batch.find(key => {
+                const modifiedKeys = batch.filter(key => {
                   const updatedVal = R.prop(key, updated);
                   const existingVal = R.prop(key, existing);
 
@@ -157,11 +152,16 @@ export const createClient = (Gun, ...config) => {
                   return true;
                 });
 
-                if (!modifiedKey) return writeNextBatch();
+                if (!modifiedKeys.length) return writeNextBatch();
 
-                return redis.hmset(soul, toRedis(updates), err => {
-                  hasChanged = modifiedKey;
+                const diff = {
+                  _: R.assoc(">", R.pick(modifiedKeys, meta), updated._),
+                  ...R.pick(modifiedKeys, updated)
+                };
+
+                return redis.hmset(soul, toRedis(diff), err => {
                   err ? reject(err) : writeNextBatch();
+                  notifyChangeSubscribers(soul, diff);
                 });
               });
             };
@@ -171,7 +171,7 @@ export const createClient = (Gun, ...config) => {
       )
     );
 
-  onChange((soul, key) => console.log("modify", soul, key));
+  onChange((soul, diff) => console.log("modify", soul, R.keys(diff)));
 
   return { get, read, batchedGet, write, onChange, offChange };
 };
