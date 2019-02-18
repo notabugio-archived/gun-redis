@@ -11,8 +11,8 @@ const edgeRe = /(\.#$)/;
 export const createClient = (Gun, ...config) => {
   let changeSubscribers = [];
   const redis = createRedisClient(...config);
-  const notifyChangeSubscribers = (soul, key) =>
-    changeSubscribers.map(fn => fn(soul, key));
+  const notifyChangeSubscribers = (soul, diff, original) =>
+    changeSubscribers.map(fn => fn(soul, diff, original));
   const onChange = fn => changeSubscribers.push(fn);
   const offChange = fn =>
     (changeSubscribers = R.without([fn], changeSubscribers));
@@ -161,7 +161,7 @@ export const createClient = (Gun, ...config) => {
 
                 return redis.hmset(soul, toRedis(diff), err => {
                   err ? reject(err) : writeNextBatch();
-                  notifyChangeSubscribers(soul, diff);
+                  notifyChangeSubscribers(soul, diff, existing);
                 });
               });
             };

@@ -65,6 +65,7 @@ export const acceptWrites = (Gun, { disableRelay = false } = {}) => db => {
                 msg.from.send &&
                 msg.from.send({
                   json,
+                  noRelay: true,
                   ignoreLeeching: true,
                   skipValidation: true
                 });
@@ -77,6 +78,7 @@ export const acceptWrites = (Gun, { disableRelay = false } = {}) => db => {
                 msg.from.send &&
                 msg.from.send({
                   json,
+                  noRelay: disableRelay,
                   ignoreLeeching: true,
                   skipValidation: true
                 });
