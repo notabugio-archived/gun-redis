@@ -56,7 +56,7 @@ export function fromRedis(obj) {
     }
   });
 
-  obj = postUnflatten(flatten.unflatten(obj));
+  obj = postUnflatten(flatten.unflatten(obj, { object: true }));
 
   Object.keys(obj)
     .sort()
