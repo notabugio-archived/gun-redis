@@ -9,6 +9,11 @@ function postUnflatten(obj) {
   let arrow = (obj._ && obj._[">"]) || {};
 
   keys(arrow).forEach(function(key) {
+    if (!(key in obj)) {
+      delete arrow[key];
+
+      return;
+    }
     let value = arrow[key];
 
     if (typeof value === "object") {
@@ -29,6 +34,10 @@ function postUnflatten(obj) {
   });
   keys(obj).forEach(key => {
     if (key[0] === ".") delete [key];
+    if (key === "_") return;
+    if (!(key in arrow)) {
+      delete obj[key];
+    }
   });
   return obj;
 }
@@ -67,7 +76,8 @@ export function fromRedis(obj) {
 
 export function toRedis(obj) {
   if (!obj) return obj;
-  obj = flatten(obj);
+
+  obj = flatten(postUnflatten(obj));
   keys(obj).forEach(function(key) {
     if (obj[key] === null) {
       obj[key] = "|NULL|";

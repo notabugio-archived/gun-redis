@@ -132,6 +132,7 @@ export const createClient = (Gun, ...config) => {
                   const updatedVal = R.prop(key, updated);
                   const existingVal = R.prop(key, existing);
 
+                  if (!(key in updated)) return false;
                   if (updatedVal === existingVal) return false;
                   const updatedSoul = R.path([key, "#"], updated);
                   const existingSoul = R.path([key, "#"], existing);
