@@ -1,6 +1,6 @@
 {
   "name": "gun-redis",
-  "version": "0.7.2",
+  "version": "0.8.0",
   "description": "Redis adapter for gun and gun-receiver",
   "main": "lib/gun-redis.js",
   "scripts": {
@@ -22,6 +22,11 @@
     "url": "https://github.com/notabugio/gun-redis/issues"
   },
   "homepage": "https://github.com/notabugio/gun-redis",
+  "dependencies": {
+    "ramda": "^0.26.1",
+    "redis": "^2.8.0",
+    "flat": "^4.1.0"
+  },
   "devDependencies": {
     "@babel/cli": "^7.0.0-beta.51",
     "@babel/core": "^7.0.0-beta.51",
@@ -36,13 +41,10 @@
     "cross-env": "^5.2.0",
     "eslint": "^5.0.1",
     "eslint-loader": "^2.0.0",
-    "flat": "^4.1.0",
     "jsdom": "11.11.0",
     "jsdom-global": "3.0.2",
     "mocha": "^4.0.1",
     "nyc": "^13.1.0",
-    "ramda": "^0.26.1",
-    "redis": "^2.8.0",
     "uglifyjs-webpack-plugin": "^1.2.7",
     "webpack": "^4.12.2",
     "webpack-cli": "^3.0.8",
@@ -51,10 +53,5 @@
   "nyc": {
     "sourceMap": false,
     "instrument": false
-  },
-  "peerDependencies": {
-    "flat": "^4.1.0",
-    "ramda": "^0.26.1",
-    "redis": "^2.8.0"
   }
 }
