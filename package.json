@@ -1,15 +1,15 @@
 {
-  "name": "gun-redis",
-  "version": "0.8.0",
+  "name": "@notabug/gun-redis",
+  "version": "0.9.0",
   "description": "Redis adapter for gun and gun-receiver",
-  "main": "lib/gun-redis.js",
+  "main": "lib/@notabug/gun-redis.js",
   "scripts": {
     "build": "webpack --env dev && webpack --env build && npm run test",
     "dev": "webpack --progress --colors --watch --env dev",
     "test": "mocha --require babel-register --colors ./test/*.spec.js",
     "test:watch": "mocha --require babel-register --colors -w ./test/*.spec.js",
     "test:cover": "cross-env NODE_ENV=test nyc mocha --require babel-register --colors test/*.js",
-    "repl": "node -i -e \"$(< ./lib/gun-redis.js)\""
+    "repl": "node -i -e \"$(< ./lib/@notabug/gun-redis.js)\""
   },
   "repository": {
     "type": "git",
