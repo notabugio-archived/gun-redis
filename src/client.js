@@ -174,5 +174,5 @@ export const createClient = (Gun, ...config) => {
 
   // onChange((soul, diff) => console.log("modify", soul, R.keys(diff)));
 
-  return { get, read, batchedGet, write, onChange, offChange };
+  return { get, read, batchedGet, write, onChange, offChange, redis };
 };

@@ -1,6 +1,6 @@
 {
   "name": "@notabug/gun-redis",
-  "version": "0.9.0",
+  "version": "0.10.0",
   "description": "Redis adapter for gun and gun-receiver",
   "main": "lib/@notabug/gun-redis.js",
   "scripts": {
